@@ -27,5 +27,8 @@ public class ErpApplication{
         System.out.println("init");
         System.out.println("wwwkio222分支测试");
         System.out.println("dev分支测试");
+        System.out.println("分支测试111");
+        System.out.println("分支测试222");
+
     }
 }
