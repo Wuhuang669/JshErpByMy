@@ -25,5 +25,6 @@ public class ErpApplication{
                 + environment.getProperty("server.port") + "/jshERP-boot/doc.html");
         System.out.println("您还需启动前端服务，启动命令：yarn run serve 或 npm run serve，测试用户：jsh，密码：123456");
         System.out.println("init");
+        System.out.println("wwwkio222分支测试");
     }
 }
