@@ -1510,8 +1510,13 @@ public class DepotHeadService {
 
         for (InOutPriceVo item : inOutPriceVoList) {
             Date operTime = item.getOperTime();
-            BigDecimal discountLastMoney = item.getDiscountLastMoney();
-            BigDecimal totalPriceAbs = item.getTotalPrice().abs();
+            if (operTime == null) {
+                // 没有操作时间的单据无法归入统计周期，跳过以免 compareTo 空指针
+                continue;
+            }
+            // 兼容历史脏数据：金额字段为空时按 0 处理，避免单条残缺单据导致首页统计整体失败
+            BigDecimal discountLastMoney = item.getDiscountLastMoney() != null ? item.getDiscountLastMoney() : BigDecimal.ZERO;
+            BigDecimal totalPriceAbs = item.getTotalPrice() != null ? item.getTotalPrice().abs() : BigDecimal.ZERO;
 
             if (isWithinRange(operTime, todayDate, Tools.strToDate(getNow3()))) {
                 updateStatistics(statistics, item, "today", discountLastMoney, totalPriceAbs);
@@ -1545,6 +1550,10 @@ public class DepotHeadService {
     }
 
     private void updateStatistics(Map<String, BigDecimal> statistics, InOutPriceVo item, String period, BigDecimal discountLastMoney, BigDecimal totalPriceAbs) {
+        if (item.getType() == null || item.getSubType() == null) {
+            // 类型缺失的单据无法归类，忽略
+            return;
+        }
         switch (item.getType()) {
             case "入库":
                 switch (item.getSubType()) {

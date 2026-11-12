@@ -1014,13 +1014,28 @@ public class DepotItemController {
                 String beginTime = Tools.firstDayOfMonth(monthList.get(0)) + BusinessConstants.DAY_FIRST_TIME;
                 String endTime = Tools.getNow() + BusinessConstants.DAY_LAST_TIME;
                 List<InOutPriceVo> inOrOutPriceList = depotItemService.inOrOutPriceList(beginTime, endTime);
+                // 兼容历史脏数据：过滤无操作时间的单据，金额为空的按 0 处理，
+                // 避免单条残缺单据触发 BigDecimal.add 空指针，导致首页柱状图整体统计失败
+                List<InOutPriceVo> validPriceList = new ArrayList<>();
+                for (InOutPriceVo priceVo : inOrOutPriceList) {
+                    if (priceVo.getOperTime() == null) {
+                        continue;
+                    }
+                    if (priceVo.getDiscountLastMoney() == null) {
+                        priceVo.setDiscountLastMoney(BigDecimal.ZERO);
+                    }
+                    if (priceVo.getTotalPrice() == null) {
+                        priceVo.setTotalPrice(BigDecimal.ZERO);
+                    }
+                    validPriceList.add(priceVo);
+                }
                 String priceLimit = userService.getRoleTypeByUserId(userId).getPriceLimit();
                 JSONArray buyPriceList = new JSONArray();
                 for (String month : monthList) {
                     JSONObject obj = new JSONObject();
                     BigDecimal outPrice = BigDecimal.ZERO;
                     BigDecimal inPrice = BigDecimal.ZERO;
-                    for (InOutPriceVo item : inOrOutPriceList) {
+                    for (InOutPriceVo item : validPriceList) {
                         String billOperMonth = Tools.dateToStr(item.getOperTime(), "yyyy-MM");
                         if (month.equals(billOperMonth)) {
                             if ("入库".equals(item.getType()) && "采购".equals(item.getSubType())) {
@@ -1041,7 +1056,7 @@ public class DepotItemController {
                     JSONObject obj = new JSONObject();
                     BigDecimal outPrice = BigDecimal.ZERO;
                     BigDecimal inPrice = BigDecimal.ZERO;
-                    for (InOutPriceVo item : inOrOutPriceList) {
+                    for (InOutPriceVo item : validPriceList) {
                         String billOperMonth = Tools.dateToStr(item.getOperTime(), "yyyy-MM");
                         if (month.equals(billOperMonth)) {
                             if ("出库".equals(item.getType()) && "销售".equals(item.getSubType())) {
@@ -1062,7 +1077,7 @@ public class DepotItemController {
                     JSONObject obj = new JSONObject();
                     BigDecimal outPrice = BigDecimal.ZERO;
                     BigDecimal inPrice = BigDecimal.ZERO;
-                    for (InOutPriceVo item : inOrOutPriceList) {
+                    for (InOutPriceVo item : validPriceList) {
                         String billOperMonth = Tools.dateToStr(item.getOperTime(), "yyyy-MM");
                         if (month.equals(billOperMonth)) {
                             if ("出库".equals(item.getType()) && "零售".equals(item.getSubType())) {
